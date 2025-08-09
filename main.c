@@ -1,167 +1,162 @@
-/*COP 3502C Assignment 2
-This program is written by: Munish Persaud*/
-
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#define SIZE 12
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
 
-typedef struct customer{
-  char name[16];
-  int numSmoothie; 
-  int lineNum; 
-  int timeEnter;
-}customer; 
+#define MAX_STORES 16
 
-typedef struct node{
-  customer* data;
-  struct node* next;
-}node;
+typedef struct Store {
+    char name[20];
+    int x;
+    int y;
+} Store;
 
-typedef struct queue{
-  node* front;//front of queue is also head of linked list
-  node* back;
-}queue;
+Store storeArray[MAX_STORES];  // array to hold store information
+int array[MAX_STORES] = {-1};  // array to store the optimal order of store pairs
 
-queue* init(int array[])//makes from and rear pointers of the queue NULL
-{
-  queue* queue=malloc(SIZE*sizeof(queue)); 
-  queue->front==NULL; 
-  queue->back==NULL;
+// Function prototypes
+void permutations(int* perm, int* used, int k, int n, double currentDistance, double* minDistance, double** distanceMatrix);
+void calculateDistances(int n, double** distanceMatrix);
+double calculateDistance(int a, int b);
+double** initializeDistanceMatrix(int size);
+void freeDistanceMatrix(double** distanceMatrix, int size);
+void printResult(int n, double** distanceMatrix);
 
-  return queue; 
+// Function to allocate memory for distance matrix
+double** initializeDistanceMatrix(int size) {
+    double** matrix = (double**)malloc(size * sizeof(double*));
+    for (int i = 0; i < size; i++) {
+        matrix[i] = (double*)malloc(size * sizeof(double));
+    }
+    return matrix;
 }
 
-node* EnQueue(customer *ptr, int i,queue*queue, int array[])//creates new node, then adds to tail by making the previous node point to temp and temp->next point to NULL
-{
-  node* newNode=malloc(sizeof(node)); 
-  newNode->data=ptr; 
-  newNode->next=NULL; 
-  if(queue->front==NULL)
-  {
-    queue->front=newNode; 
-    queue->back=newNode->next; 
-  }
-  else
-  {
-    queue->back->next=newNode; 
-    queue->back++; 
-  }
-
-  return newNode; 
+// Function to free memory allocated for distance matrix
+void freeDistanceMatrix(double** matrix, int size) {
+    for (int i = 0; i < size; i++) {
+        free(matrix[i]);
+    }
+    free(matrix);
 }
 
-node* DeQueue(queue*queue,int array[])//removes node from the head 
-{
-  node*temp=queue->front; 
-  if (queue->front==NULL)
-  {
-    //put something here 
-  }
-  else
-  {
-    queue->front=queue->front->next; 
-    queue->back=queue->back->next; 
-  }
-  free(temp); 
-}
-
-queue* Empty(struct queue*array[],int i)//checks the queue to see if its empty. Returns 1 if empty, 0 if not. 
-{
-  if (array[i]->front!=NULL)
-  {
-    return 1; 
-  }
-  else
-  {
-    return 0; 
-  }
-}
-
-queue* Peek(struct queue* queue,int array[])//looks at front of line without removing
-{
-  if (Empty==0)
-  {
-    return queue->front->data; 
-  }
-  else return 1; 
-}
-
-
-customer* createCustomer(queue*queue, int n)//creates customer by using struct
-{
-  customer* newCustomer = (customer*)malloc(sizeof(customer)*n);
-  struct queue*lines[SIZE];
-  for(int i=0; i<SIZE;i++){
-    init(lines[i]); 
-  }
-
-  for(int i=0; i<n; i++)
-  { 
-    scanf("%d",&newCustomer[i].timeEnter);//why ampersand?
-    scanf("%d",&newCustomer[i].lineNum);
-    scanf("%s",newCustomer[i].name);//why no amerpersand?
-    scanf("%d",&newCustomer[i].numSmoothie);
-    lines[newCustomer[i].lineNum-1]=EnQueue(newCustomer, i,queue, lines[SIZE]);
-  }
-  return newCustomer; 
-  return lines; 
-}
-
-queue* checkoutCustomer(queue* array[])//start from scratch logic is wrong
-//if curTime is less than 100, pick first customer
-//update curTime with first customer
-//check if time is less than 100 and then take lowest value from front pointer for the queues
-//once time is at or greater than 100 you process by the lowest number of smoothies
-//to tranverse the array, take index 0 as lowest, if next index is lower it becomes the new lowest
-//do this till end of array and print the details of the array index's queue front then dequeue and restart
-{
-  int curTime=0; 
-  int correctIndex=0; 
-  if(curTime=0){}
-
-  if(curTime<100){
-    int compareArray[SIZE];
-    for(int i=0; i<SIZE;i++){
-        if(Empty(array[i],i)!=1){
-          compareArray[i]+=array[i]->front->data->timeEnter; 
+// Recursive function to find permutations of store pairs and calculate minimum distance
+void permutations(int* perm, int* used, int k, int n, double currentDistance, double* minDistance, double** distanceMatrix) {
+    int cnt = 2 * n;
+    // base case: if all pairs have been chosen
+    if (k == cnt) {
+        // check if current permutation yields a smaller distance
+        if (currentDistance < *minDistance) {
+            *minDistance = currentDistance;
+            memcpy(array, perm, cnt * sizeof(int));  // store the current permutation
         }
-        else if(Empty(array[i], i)==1){
-          compareArray[i]+=999999;
-        }
+        return;
     }
 
-    for(int i=0; i<SIZE-1;i++){
-      int lowestTime=compareArray[0];
-      if(compareArray[i+1]<lowestTime){
-        lowestTime=compareArray[i+1];
-      }
-           
-      else if(compareArray[i+1]=lowestTime){
-        lowestTime=lowestTime; 
-      }
-  
-      else if(compareArray[i+1]>lowestTime){
-        lowestTime=lowestTime;
-      }
-      correctIndex=i+1;
-      curTime+=(lowestTime+30+(array[correctIndex]->front->data->numSmoothie*5));
-      printf("At time %d, %s left the counter from line %d.",curTime,array[correctIndex]->front->data->name,array[correctIndex]->front->data->lineNum);
-      Dequeue(array[correctIndex]->front); 
+    // alternate between selecting the first store in a pair and the second
+    if (k % 2 == 0) {
+        // choose the first store in the pair
+        for (int i = 0; i < cnt; i++) {
+            if (!used[i]) {
+                used[i] = 1;          // mark the store as used
+                perm[k] = i;          // record the index of the chosen store
+                permutations(perm, used, k + 1, n, currentDistance, minDistance, distanceMatrix);
+                used[i] = 0;          // backtrack: mark the store as unused
+                break;                // only need to choose one store for the first in pair
+            }
+        }
+    } else {
+        // choose the second store in the pair
+        int prev = perm[k - 1];        // previous store chosen in the current pair
+        for (int i = 0; i < cnt; i++) {
+            if (!used[i]) {
+                double additionalDistance = distanceMatrix[prev][i];  // distance between the current and previous stores
+                double newDist = currentDistance + additionalDistance;  // update total distance
+                // only continue if the new distance is less than the current minimum
+                if (newDist >= *minDistance) continue;
+                used[i] = 1;          // mark the store as used
+                perm[k] = i;          // record the index of the chosen store
+                permutations(perm, used, k + 1, n, newDist, minDistance, distanceMatrix);
+                used[i] = 0;          // backtrack: mark the store as unused
+            }
+        }
     }
-  }
 }
- 
 
+// function to calculate distances between all store pairs
+void calculateDistances(int n, double** distanceMatrix) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            distanceMatrix[i][j] = calculateDistance(i, j);  // calculate distance between store i and store j
+        }
+    }
+}
+
+// function to calculate Euclidean distance between two stores
+double calculateDistance(int a, int b) {
+    return sqrt(pow(storeArray[a].x - storeArray[b].x, 2) + pow(storeArray[a].y - storeArray[b].y, 2));
+}
+
+// function to print the result: total distance and optimal store pairs
+void printResult(int n, double** distanceMatrix) {
+    int cnt = 2 * n;  // total number of stores
+    double total = 0;  // total distance travelled
+
+    // calculate total distance and print each optimal store pair
+    for (int i = 0; i < cnt; i += 2) {
+        total += distanceMatrix[array[i]][array[i + 1]];  // add distance of each pair to total
+    }
+    printf("%.3f\n", total);  // print total distance
+
+    // print each optimal store pair with their names and distance
+    for (int i = 0; i < cnt; i += 2) {
+        printf("(%s, %s, %.3f)\n", storeArray[array[i]].name, storeArray[array[i + 1]].name,
+               distanceMatrix[array[i]][array[i + 1]]);
+    }
+
+    // reset the array to initial state (first element set to -1, others to 0)
+    for (int r = 0; r < MAX_STORES; r++)
+        array[r] = (r == 0) ? -1 : 0;
+}
+
+// main function to execute the program
 int main(void) {
-  queue*queue; 
-  customer*customerptr; 
-  int testcases=0; 
-  scanf("%d",&testcases); 
-  for (int i=0; i<testcases; i++){
-    printf("test cases worked");
-    int customerNum; 
-    scanf("%d",&customerNum);
-    customer* createCustomer(queue, customerNum); 
-  }
+    int testCases = 0;  // number of test cases
+    scanf("%d", &testCases);  // read number of test cases from input
+
+    // iterate through each test case
+    for (int t = 0; t < testCases; t++) {
+        int numberOfPairs = 0;  // number of store pairs for the current test case
+        scanf("%d", &numberOfPairs);  // read number of store pairs from input
+
+        int perm[MAX_STORES] = {0};  // array to store current permutation of store indices
+        int used[MAX_STORES] = {0};  // array to track used store indices
+
+        int currentIndex = 0;  // index to track current position in storeArray
+        // read store coordinates and names for each pair into storeArray
+        for (int j = 0; j < numberOfPairs; j++) {
+            char tempName1[20], tempName2[20];  // temporary variables for store names
+            scanf("%d %d %s", &storeArray[currentIndex].x, &storeArray[currentIndex].y, tempName1);
+            strcpy(storeArray[currentIndex].name, tempName1);  // copy first store name into storeArray
+            scanf("%d %d %s", &storeArray[currentIndex + 1].x, &storeArray[currentIndex + 1].y, tempName2);
+            strcpy(storeArray[currentIndex + 1].name, tempName2);  // copy second store name into storeArray
+            currentIndex += 2;  // move to the next pair of stores
+        }
+
+        // allocate memory and calculate distances between all store pairs
+        double** distanceMatrix = initializeDistanceMatrix(MAX_STORES);
+        calculateDistances(numberOfPairs * 2, distanceMatrix);
+
+        double minDistance = DBL_MAX;  // variable to store minimum distance found
+        // find optimal permutation of store pairs with minimum distance
+        permutations(perm, used, 0, numberOfPairs, 0.0, &minDistance, distanceMatrix);
+        // print the total distance and optimal store pairs for the current test case
+        printResult(numberOfPairs, distanceMatrix);
+
+        // free memory allocated for distance matrix
+        freeDistanceMatrix(distanceMatrix, MAX_STORES);
+    }
+
+    return 0;  // exit the program
 }
